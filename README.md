@@ -1,29 +1,23 @@
 # Netflix Movies and TV Shows Data Analysis Using SQL
 
-## 📝 Overview
+## Introduction
 
-This project analyzes Netflix's movie and TV show dataset using SQL to extract actionable business insights. The analysis covers content diversity, regional trends, genre popularity, and actor/director metrics to support strategic decision-making for streaming platforms.
+This project leverages SQL to analyze Netflix’s expansive library of movies and TV shows. Our goal is to extract actionable insights about content diversity, regional trends, genre popularity, and key contributions from actors and directors. With carefully constructed queries, we unearth patterns that can inform strategic decisions for streaming platforms.
 
----
+## Objectives
 
-## 🎯 Objectives
+- **Content Diversity:** Assess the distribution between movies and TV shows.
+- **Ratings Analysis:** Identify the most frequent ratings to understand the audience target.
+- **Time Trends:** Analyze release patterns and recent content additions.
+- **Genre & Keyword Exploration:** Discover popular genres and flag content based on intense keywords.
+- **Regional & People Insights:** Examine contributions by country as well as key directors and actors.
 
-- Assess content type distribution (Movies vs TV Shows).
-- Identify the most frequent content ratings.
-- Analyze content additions and releases over time.
-- Discover genre and keyword trends.
-- Examine actor and director participation in regional productions.
-
----
-
-## 📁 Dataset
+## Dataset
 
 - **Source:** [Netflix Shows Dataset on Kaggle](https://www.kaggle.com/datasets/shivamb/netflix-shows?resource=download)
 - **Table Name:** `netflix`
 
----
-
-## 🧱 Table Schema
+## Table Schema
 
 ```sql
 CREATE TABLE netflix (
@@ -40,19 +34,23 @@ CREATE TABLE netflix (
     listed_in    VARCHAR(250),
     description  VARCHAR(550)
 );
-````
-
----
-
-## 📌 1. Content Overview
-
-### 📺 1.1. Movies vs TV Shows
-
-```sql
-SELECT type, COUNT(*) AS Count FROM netflix GROUP BY type;
 ```
 
-### 🎯 1.2. Most Common Ratings
+## 1. Content Overview
+
+### 1.1 Movies vs TV Shows
+
+Count the number of movies and TV shows:
+
+```sql
+SELECT type, COUNT(*) AS Count 
+FROM netflix 
+GROUP BY type;
+```
+
+### 1.2 Most Common Ratings
+
+Identify the most frequent rating for each content type:
 
 ```sql
 WITH RatingCounts AS (
@@ -66,7 +64,9 @@ FROM RatingCounts
 WHERE rn = 1;
 ```
 
-### 🏷️ 1.3. Genre Distribution
+### 1.3 Genre Distribution
+
+Break down the content by genres by splitting the `listed_in` field:
 
 ```sql
 SELECT TRIM(value) AS genre, COUNT(*) AS total_content
@@ -75,17 +75,21 @@ CROSS APPLY STRING_SPLIT(listed_in, ',')
 GROUP BY TRIM(value);
 ```
 
----
+## 2. Time-Based Analysis
 
-## 📆 2. Time-Based Analysis
+### 2.1 Movies Released in 2019
 
-### 🎬 2.1. Movies Released in 2019
+Retrieve all movies that were released in 2019:
 
 ```sql
-SELECT * FROM netflix WHERE release_year = 2019 AND type = 'Movie';
+SELECT * 
+FROM netflix 
+WHERE release_year = 2019 AND type = 'Movie';
 ```
 
-### 📅 2.2. Content Added in the Last 5 Years (as of May 2020)
+### 2.2 Content Added in the Last 5 Years (as of May 2020)
+
+Select titles added since May 1, 2015. We use `TRY_CONVERT` to correctly interpret the date:
 
 ```sql
 SELECT * 
@@ -93,7 +97,9 @@ FROM netflix
 WHERE TRY_CONVERT(DATETIME, date_added, 6) >= '2015-05-01';
 ```
 
-### 📊 2.3. Top 5 Years by Average Indian Content Releases
+### 2.3 Top 5 Years by Average Indian Content Releases
+
+Determine which years had the highest proportion of Indian content:
 
 ```sql
 WITH IndiaContent AS (
@@ -114,11 +120,11 @@ CROSS JOIN TotalIndiaContent tic
 ORDER BY avg_release_percentage DESC;
 ```
 
----
+## 3. Country-Based Analysis
 
-## 🌍 3. Country-Based Analysis
+### 3.1 Top 5 Countries by Content Volume
 
-### 🌐 3.1. Top 5 Countries by Content Volume
+Extract and count individual countries from the `country` field:
 
 ```sql
 SELECT TOP 5 TRIM(value) AS country, COUNT(*) AS total_content
@@ -129,11 +135,11 @@ GROUP BY TRIM(value)
 ORDER BY total_content DESC;
 ```
 
----
+## 4. Content Attributes
 
-## 🎬 4. Content Attributes
+### 4.1 Longest Movie
 
-### ⏱️ 4.1. Longest Movie
+Identify the movie with the longest duration:
 
 ```sql
 SELECT TOP 1 *
@@ -142,7 +148,9 @@ WHERE type = 'Movie'
 ORDER BY CAST(LEFT(duration, CHARINDEX(' ', duration) - 1) AS INT) DESC;
 ```
 
-### 📺 4.2. TV Shows with More Than 5 Seasons
+### 4.2 TV Shows with More Than 5 Seasons
+
+Select TV shows that have more than 5 seasons:
 
 ```sql
 SELECT * 
@@ -151,7 +159,9 @@ WHERE type = 'TV Show'
   AND CAST(LEFT(duration, CHARINDEX(' ', duration) - 1) AS INT) > 5;
 ```
 
-### 📚 4.3. Documentaries
+### 4.3 Documentaries
+
+Retrieve all content classified as Documentaries:
 
 ```sql
 SELECT * 
@@ -159,7 +169,9 @@ FROM netflix
 WHERE listed_in LIKE '%Documentaries%';
 ```
 
-### ❌ 4.4. Content Without a Director
+### 4.4 Content Without a Director
+
+Identify entries without any director information:
 
 ```sql
 SELECT * 
@@ -167,7 +179,9 @@ FROM netflix
 WHERE director IS NULL OR director = '';
 ```
 
-### ⚠️ 4.5. Keyword-Based Content Categorization (Kill or Violence)
+### 4.5 Keyword-Based Content Categorization (Kill or Violence)
+
+Categorize content based on whether its description contains keywords like "kill" or "violence":
 
 ```sql
 SELECT
@@ -184,11 +198,11 @@ GROUP BY
     END;
 ```
 
----
+## 5. People-Based Analysis
 
-## 👥 5. People-Based Analysis
+### 5.1 Content Directed by Rajiv Chilaka
 
-### 🎞️ 5.1. Content Directed by Rajiv Chilaka
+Retrieve content directed by Rajiv Chilaka:
 
 ```sql
 SELECT n.*
@@ -197,7 +211,9 @@ CROSS APPLY STRING_SPLIT(director, ',') d
 WHERE TRIM(d.value) = 'Rajiv Chilaka';
 ```
 
-### 🎥 5.2. Salman Khan Movie Appearances in Last 10 Years
+### 5.2 Salman Khan Movie Appearances in Last 10 Years
+
+Count the movies featuring Salman Khan released in the last 10 years:
 
 ```sql
 SELECT COUNT(*) AS movie_count
@@ -207,7 +223,9 @@ WHERE type = 'Movie'
   AND release_year >= YEAR(GETDATE()) - 10;
 ```
 
-### 👑 5.3. Top 10 Actors in Indian Movies
+### 5.3 Top 10 Actors in Indian Movies
+
+Identify the top 10 actors by appearance count in Indian movies:
 
 ```sql
 SELECT TOP 10
@@ -220,20 +238,6 @@ GROUP BY TRIM(value)
 ORDER BY appearance_count DESC;
 ```
 
----
+## Conclusion
 
-## 📈 Key Findings
-
-* **Balanced Content Types:** A relatively even distribution of TV shows and movies.
-* **Popular Ratings:** TV-14, TV-MA, and PG are dominant, indicating a focus on teen and general audiences.
-* **Top Contributors:** The U.S., India, and the U.K. provide most of the content.
-* **Strong Genres:** Documentaries, Dramas, and Comedies are top content categories.
-* **Violent Themes:** A minority of content includes keywords like "kill" or "violence".
-* **Content Gaps:** Many entries lack a director, and some actors dominate specific regions.
-
----
-
-## ✅ Conclusion
-
-This SQL-based exploratory analysis demonstrates how structured queries can extract rich insights from entertainment data. These findings can support strategic planning in areas such as content acquisition, recommendation systems, and regional market focus.
-
+This analysis demonstrates how diverse SQL techniques—from common table expressions to string splitting—can transform raw data into strategic business insights. By exploring Netflix’s content distribution, release trends, genre popularity, and regional dynamics, we’re able to offer a deeper understanding of the streaming platform’s library. These insights could play a pivotal role in shaping content acquisition strategies, viewer engagement efforts, and market-specific innovations.
